@@ -1,6 +1,6 @@
 <div align="center">
 
-# 📲 PhoneDrop
+# 📲 PhoneDrop 
 
 ### AirDrop-style sharing between your iPhone and Windows PC
 
@@ -292,7 +292,7 @@ Set `PHONEDROP_NO_BROWSER=1` to stop the browser opening automatically.
 
 <div align="center">
 
-**Made with ❤️ for everyone who owns an iPhone and a Windows PC.**
+**Made with ❤️ by Parveen rawal for everyone who owns an iPhone and a Windows PC.**
 
 ⭐ **If PhoneDrop saves you time, give it a star!** ⭐
 
