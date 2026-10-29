@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/icon.svg">
+<title>PhoneDrop</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fffdf9;--ink:#1d1c1a;--mute:#76716a;--line:#e7e2d8;--acc:#0f6e64;--acc2:#e3f1ee;--warn:#b4441f;--bar:#d9e9e5;--drop:rgba(15,110,100,.08)}
+@media (prefers-color-scheme:dark){:root{--bg:#151513;--card:#1f1e1b;--ink:#f1eee8;--mute:#a19b91;--line:#34322d;--acc:#3fb7a6;--acc2:#1d3532;--warn:#ff8a65;--bar:#28403c;--drop:rgba(63,183,166,.1)}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 24px 48px}
+header{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+header h1{font:600 26px/1 "Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;letter-spacing:-.02em;margin:0}
+header .sub{flex:1}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:18px}
+.card h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);margin:0 0 12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card h2 .sp{flex:1}
+.qr{background:#fff;border-radius:14px;padding:12px;display:grid;place-items:center}
+.qr img{width:100%;max-width:280px;image-rendering:pixelated;display:block}
+.steps{margin:14px 0 0;padding-left:20px;color:var(--mute);font-size:14px}
+.steps li{margin:4px 0}.steps b{color:var(--ink)}
+select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:var(--bg);color:var(--ink);font:14px inherit;padding:9px 11px}
+textarea{min-height:70px;resize:vertical}
+.url{font:12.5px ui-monospace,Consolas,monospace;color:var(--mute);word-break:break-all;margin-top:8px}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:7px 12px;font:500 13.5px inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--acc)}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.x{padding:5px 9px;color:var(--mute)}
+.drop{border:2px dashed var(--line);border-radius:16px;padding:30px 16px;text-align:center;cursor:pointer;transition:.15s}
+.drop:hover,.drop.on{border-color:var(--acc);background:var(--drop)}
+.drop b{font-size:17px;display:block;margin-bottom:4px}
+.drop span{color:var(--mute);font-size:13.5px}
+.row{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.ico{width:36px;height:36px;border-radius:9px;background:var(--acc2);color:var(--acc);display:grid;place-items:center;font-size:10.5px;font-weight:700;flex:none;text-transform:uppercase}
+.meta{flex:1;min-width:0}
+.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.small{font-size:12.5px;color:var(--mute)}
+.empty{color:var(--mute);font-size:14px;padding:4px 0}
+.list{max-height:360px;overflow:auto}
+.bar{height:6px;background:var(--bar);border-radius:6px;overflow:hidden;margin-top:5px}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:6px;transition:width .25s}
+.speed{font:600 22px/1 "Segoe UI Variable Display","Segoe UI",system-ui;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tag{font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--acc2);color:var(--acc)}
+.tag.out{background:#f6e7d6;color:#9a5418}
+@media (prefers-color-scheme:dark){.tag.out{background:#3b2b1c;color:#f0b37a}}
+.txt{white-space:pre-wrap;word-break:break-word}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:1060px){.two{grid-template-columns:1fr}}
+details{color:var(--mute);font-size:13.5px}
+details summary{cursor:pointer;color:var(--ink);font-weight:500}
+details li{margin:5px 0}
+.ok{color:#2fa36b}.err{color:var(--warn)}
+.log{font:12px/1.55 ui-monospace,Consolas,monospace;color:var(--mute);margin-top:10px;max-height:280px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.log .err{color:var(--warn)}
+.toast{position:fixed;right:24px;bottom:24px;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none}
+.toast.on{opacity:1;transform:none}
+.offline{display:none;background:#fbe9e3;color:#7a2a12;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>PhoneDrop</h1>
+    <span class="sub small">Fast iPhone ↔ PC sharing over your Wi-Fi</span>
+    <button class="btn" id="openRecv">Open received folder</button>
+  </header>
+  <div class="offline" id="offline">PhoneDrop has stopped. Run PhoneDrop.exe again to continue.</div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>Connect your iPhone</h2>
+        <div class="qr"><img id="qr" alt="QR code to connect your iPhone"></div>
+        <ol class="steps">
+          <li>Join the <b>same Wi-Fi</b> as this PC</li>
+          <li>Open the <b>Camera</b> and point it at the code</li>
+          <li>Tap the link that appears</li>
+        </ol>
+        <div style="margin-top:14px">
+          <label class="small" for="net">Network</label>
+          <select id="net"></select>
+          <div class="url" id="url"></div>
+        </div>
+      </div>
+      <div class="card">
+        <details>
+          <summary>Tips for maximum speed</summary>
+          <ul style="padding-left:18px">
+            <li>Connect the iPhone to the <b>5&nbsp;GHz</b> Wi-Fi, not 2.4&nbsp;GHz.</li>
+            <li>Plug this PC into the router with an <b>Ethernet cable</b> if you can.</li>
+            <li>No router? Turn on <b>Windows Mobile Hotspot</b> (Settings → Network → Mobile hotspot), join it on the iPhone, then pick <b>192.168.137.1</b> above.</li>
+            <li>Send many files at once — PhoneDrop uploads 3 in parallel.</li>
+            <li>iPhone can't connect? Windows Firewall may be blocking it: allow PhoneDrop on <b>Private networks</b>, and set your Wi-Fi to <b>Private</b>.</li>
+          </ul>
+        </details>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>Live transfers<span class="sp"></span><span class="speed" id="speed">—</span></h2>
+        <div id="transfers"><div class="empty">Nothing moving right now.</div></div>
+      </div>
+
+      <div class="two">
+        <div class="card">
+          <h2>Share to iPhone<span class="sp"></span><button class="btn x" id="openShared">Folder</button></h2>
+          <div class="drop" id="drop"><b>Drop files here</b><span>or click to choose — they appear on the iPhone instantly</span></div>
+          <input type="file" id="file" multiple hidden>
+          <div class="list" id="shared" style="margin-top:10px"></div>
+        </div>
+        <div class="card">
+          <h2>Received from iPhone<span class="sp"></span><span class="small" id="recvCount"></span></h2>
+          <div class="list" id="received"><div class="empty">Files you send from the iPhone show up here.</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <details id="logBox"><summary>Activity log <span class="small">(what the iPhone reports — useful if something doesn't arrive)</span></summary>
+          <div id="log" class="log"></div></details>
+      </div>
+
+      <div class="card">
+        <h2>Text &amp; links</h2>
+        <textarea id="msg" placeholder="Type or paste text, then press Ctrl+Enter to send it to the iPhone"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="btn p" id="sendTxt">Send to iPhone</button></div>
+        <div class="list" id="texts" style="margin-top:6px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fmt(b){ if(b<0) return '?'; if(b<1024) return b+' B'; const u=['KB','MB','GB','TB']; let i=-1; do{b/=1024;i++}while(b>=1024&&i<3); return b.toFixed(b<10?1:0)+' '+u[i]; }
+const ext = n => (n.split('.').pop()||'').slice(0,4);
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),2000); }
+const post = u => fetch(u, {method:'POST'});
+const ago = ms => { const s=(Date.now()-ms)/1000; if(s<60) return 'just now'; if(s<3600) return Math.floor(s/60)+' min ago'; if(s<86400) return Math.floor(s/3600)+' h ago'; return new Date(ms).toLocaleDateString(); };
+
+// ---------- network / QR ----------
+let curIP = '';
+function setNet(urls){
+  const sel = $('#net');
+  const key = urls.map(u=>u.ip).join(',');
+  if(sel.dataset.key !== key){
+    sel.dataset.key = key;
+    sel.innerHTML = urls.length ? urls.map(u=>`<option value="${u.ip}">${u.ip}${u.ip==='192.168.137.1'?' (Mobile Hotspot)':''}</option>`).join('') : '<option>No network found — connect to Wi-Fi</option>';
+    if(!urls.find(u=>u.ip===curIP)) curIP = urls[0] ? urls[0].ip : '';
+    if(curIP) sel.value = curIP; showQR(urls);
+  }
+  sel._urls = urls;
+}
+function showQR(urls){
+  const u = (urls||$('#net')._urls||[]).find(u=>u.ip===curIP);
+  $('#qr').src = '/qr.png?ip=' + encodeURIComponent(curIP) + '&_=' + Date.now();
+  $('#url').textContent = u ? u.url : '';
+}
+$('#net').onchange = e => { curIP = e.target.value; showQR(); };
+
+// ---------- share files to iPhone ----------
+const drop = $('#drop');
+drop.onclick = () => $('#file').click();
+$('#file').onchange = e => { share([...e.target.files]); e.target.value=''; };
+['dragenter','dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('on'); }));
+['dragleave','drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if(ev==='drop' || !e.relatedTarget) drop.classList.remove('on'); }));
+document.addEventListener('drop', e => { const f=[...(e.dataTransfer.files||[])]; if(f.length) share(f); });
+
+const q=[]; let active=0;
+function share(files){ files.forEach(f=>q.push(f)); pump(); toast(`Adding ${files.length} file${files.length>1?'s':''}…`); }
+function pump(){
+  while(active<3 && q.length){
+    const f=q.shift(); active++;
+    const x=new XMLHttpRequest();
+    x.open('PUT','/api/upload?to=share&name='+encodeURIComponent(f.name));
+    x.onloadend=()=>{ active--; if(x.status!==200) toast('Could not add '+f.name); pump(); poll(); };
+    x.send(f);
+  }
+}
+
+// ---------- render ----------
+function fileRow(f, actions){
+  return `<div class="row"><div class="ico">${esc(ext(f.name))}</div><div class="meta"><div class="name" title="${esc(f.name)}">${esc(f.name)}</div><div class="small">${fmt(f.size)} · ${ago(f.mod)}</div></div>${actions}</div>`;
+}
+const cache = {};
+function setHTML(id, html){ if(cache[id]!==html){ cache[id]=html; $(id).innerHTML=html; } }
+
+function render(s){
+  s.shared = s.shared||[]; s.texts = s.texts||[]; s.transfers = s.transfers||[]; s.received = s.received||[];
+  setNet(s.urls||[]);
+  setHTML('#shared', s.shared.length ? s.shared.map(f=>fileRow(f,
+    `<button class="btn x" data-del="${esc(f.name)}" title="Stop sharing">✕</button>`)).join('')
+    : '<div class="empty">Nothing shared yet.</div>');
+  $('#recvCount').textContent = s.received.length ? s.received.length+' files' : '';
+  setHTML('#received', s.received.length ? s.received.slice(0,200).map(f=>fileRow(f,
+    `<a class="btn" href="/dl/${encodeURIComponent(f.name)}?from=recv&view=1" target="_blank">Open</a>`)).join('')
+    : '<div class="empty">Files you send from the iPhone show up here.</div>');
+  setHTML('#texts', s.texts.map(t=>`<div class="row"><div class="meta"><div class="small">From ${t.from} · ${new Date(t.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div><div class="txt">${esc(t.text)}</div></div>
+    <button class="btn" data-copy="${t.id}">Copy</button><button class="btn x" data-deltext="${t.id}">✕</button></div>`).join(''));
+  window._texts = s.texts;
+  setHTML('#log', (s.log||[]).length ? s.log.map(l => `<div class="${/fail|error|could not|empty|no files|Blocked|did not/i.test(l)?'err':''}">${esc(l)}</div>`).join('') : '<div>Nothing yet.</div>');
+
+  const tr = s.transfers;
+  const live = tr.filter(t=>!t.finished);
+  const total = live.reduce((a,t)=>a+t.speed,0);
+  $('#speed').textContent = live.length ? (total/1048576).toFixed(1)+' MB/s' : '—';
+  setHTML('#transfers', tr.length ? tr.map(t=>{
+    const pc = t.size>0 ? Math.min(100, t.done/t.size*100) : (t.finished?100:0);
+    const dir = t.kind==='in' ? '<span class="tag">iPhone → PC</span>' : t.kind==='out' ? '<span class="tag out">PC → iPhone</span>' : '<span class="tag out">Shared</span>';
+    const st = t.failed ? '<span class="err">failed</span>' : t.finished ? '<span class="ok">done</span>' : Math.floor(pc)+'%';
+    return `<div class="row"><div class="meta"><div class="name">${esc(t.name)}</div><div class="small">${dir} ${fmt(t.done)}${t.size>0?' of '+fmt(t.size):''} · ${(t.speed/1048576).toFixed(1)} MB/s · ${st}</div><div class="bar"><i style="width:${pc}%"></i></div></div></div>`;
+  }).join('') : '<div class="empty">Nothing moving right now.</div>');
+}
+
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.del!==undefined){ await post('/api/delete?what=shared&name='+encodeURIComponent(b.dataset.del)); poll(); }
+  if(b.dataset.deltext){ await post('/api/delete?what=text&id='+b.dataset.deltext); poll(); }
+  if(b.dataset.copy){ const t=(window._texts||[]).find(t=>t.id==b.dataset.copy); if(t){ await navigator.clipboard.writeText(t.text); toast('Copied'); } }
+});
+$('#openRecv').onclick = () => post('/api/open?which=recv');
+$('#openShared').onclick = () => post('/api/open?which=shared');
+
+async function sendText(){
+  const v=$('#msg').value; if(!v.trim()) return;
+  const r = await fetch('/api/text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:v})});
+  if(r.ok){ $('#msg').value=''; toast('Sent to iPhone ✓'); poll(); }
+}
+$('#sendTxt').onclick = sendText;
+$('#msg').addEventListener('keydown', e => { if(e.key==='Enter' && (e.ctrlKey||e.metaKey)) sendText(); });
+
+// Notify when new files arrive from the iPhone.
+let known = null, timer;
+async function poll(){
+  clearTimeout(timer);
+  try{
+    const r = await fetch('/api/state',{cache:'no-store'}); const s = await r.json();
+    $('#offline').style.display='none';
+    const names = new Set(s.received.map(f=>f.name));
+    if(known){ const n=[...names].filter(x=>!known.has(x)).length; if(n) { toast(`Received ${n} new file${n>1?'s':''} from iPhone`); document.title = `(${n}) PhoneDrop`; setTimeout(()=>document.title='PhoneDrop',4000); } }
+    known = names;
+    render(s);
+    const busy = s.transfers.some(t=>!t.finished);
+    timer = setTimeout(poll, busy ? 700 : 1500);
+  }catch(e){ $('#offline').style.display='block'; timer = setTimeout(poll, 3000); }
+}
+poll();
+</script>
+</body>
+</html>

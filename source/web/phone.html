@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PhoneDrop">
+<meta name="theme-color" content="#f6f4ef">
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="manifest" href="/manifest.json">
+<title>PhoneDrop</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fffdf9;--ink:#1d1c1a;--mute:#76716a;--line:#e7e2d8;--acc:#0f6e64;--acc2:#e3f1ee;--warn:#b4441f;--bar:#d9e9e5}
+@media (prefers-color-scheme:dark){:root{--bg:#151513;--card:#1f1e1b;--ink:#f1eee8;--mute:#a19b91;--line:#34322d;--acc:#3fb7a6;--acc2:#1d3532;--warn:#ff8a65;--bar:#28403c}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+main{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 18px) 16px 40px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+header h1{font-size:22px;letter-spacing:-.02em;margin:0;flex:1}
+.dot{width:9px;height:9px;border-radius:50%;background:#2fa36b;box-shadow:0 0 0 4px rgba(47,163,107,.15)}
+.dot.off{background:var(--warn);box-shadow:0 0 0 4px rgba(180,68,31,.15)}
+.status{font-size:13px;color:var(--mute)}
+.send{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;padding:30px 16px;border-radius:22px;border:0;background:var(--acc);color:#fff;font:600 19px/1.2 inherit;cursor:pointer}
+.send small{font-weight:400;font-size:13px;opacity:.85}
+.send svg{width:30px;height:30px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:16px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:0 0 10px;font-weight:600;display:flex;justify-content:space-between}
+.empty{color:var(--mute);font-size:14px;padding:6px 0}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.ico{width:38px;height:38px;border-radius:10px;background:var(--acc2);color:var(--acc);display:grid;place-items:center;font-size:11px;font-weight:700;flex:none;text-transform:uppercase}
+.meta{flex:1;min-width:0}
+.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
+.sub{font-size:12.5px;color:var(--mute)}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:11px;padding:8px 12px;font:500 14px inherit;text-decoration:none;white-space:nowrap}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#fff}
+.bar{height:6px;background:var(--bar);border-radius:6px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:var(--acc);border-radius:6px;transition:width .2s}
+#overall{display:none}
+.big{display:flex;justify-content:space-between;align-items:baseline;font-variant-numeric:tabular-nums}
+.big{gap:10px}.big b{font-size:24px;letter-spacing:-.02em;white-space:nowrap}.big .sub{text-align:right}
+textarea{width:100%;min-height:76px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);color:var(--ink);font:16px inherit;resize:vertical}
+.txt{white-space:pre-wrap;word-break:break-word;font-size:15px}
+.tip{font-size:13px;color:var(--mute);margin-top:18px;line-height:1.5}
+.ok{color:#2fa36b}.err{color:var(--warn)}
+.note{display:none;position:relative;font-size:14px;border-color:var(--acc)}
+.note p{margin:6px 0 0;color:var(--mute)}.note p b{color:var(--ink)}
+.note .x{position:absolute;top:10px;right:10px;border:0;background:none;color:var(--mute);font-size:16px}
+.keep{font-size:12.5px;color:var(--mute);margin-top:6px}
+.logbox summary{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);font-weight:600;cursor:pointer}
+.log{font:12px/1.5 ui-monospace,Menlo,monospace;color:var(--mute);margin-top:8px;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.log .err{color:var(--warn)}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 20px);transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>PhoneDrop</h1>
+    <span class="status" id="status">Connected to PC</span><span class="dot" id="dot"></span>
+  </header>
+
+  <button class="send" id="pick">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    Send to PC
+    <small>Photos, videos or any files</small>
+  </button>
+  <div id="pickers" hidden></div>
+
+  <div class="card note" id="prep">
+    <button class="x" id="prepClose" aria-label="Close">✕</button>
+    <b>Getting your files ready…</b>
+    <p>After you tap <b>Add</b>, the iPhone first prepares the files. Big videos can take a minute — this is the iPhone converting them, not PhoneDrop.</p>
+    <p><b>Faster:</b> in the Photos picker tap <b>Options</b> (top) → <b>Current</b>. That sends the original video with no converting.</p>
+  </div>
+
+  <div class="card" id="overall">
+    <div class="big"><b id="ovSpeed">0 MB/s</b><span class="sub" id="ovText"></span></div>
+    <div class="bar"><i id="ovBar"></i></div>
+    <div class="keep" id="keep">Keep this screen open until it finishes.</div>
+    <button class="btn p" id="retry" style="display:none;margin-top:10px">Retry failed</button>
+    <div id="upList" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <h2><span>From your PC</span><span id="sharedCount"></span></h2>
+    <div id="shared"><div class="empty">Nothing shared yet. Drop files on the PhoneDrop page on your PC.</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Text &amp; links</h2>
+    <textarea id="msg" placeholder="Type or paste text to send to your PC"></textarea>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="btn p" id="sendTxt">Send text</button></div>
+    <div id="texts" style="margin-top:6px"></div>
+  </div>
+
+  <details class="card logbox" id="logBox"><summary>Activity log</summary><div id="log" class="log"><div>Nothing yet.</div></div></details>
+
+  <p class="tip">Tip: tap <b>Share</b> → <b>Add to Home Screen</b> to open PhoneDrop like an app. For the best speed, use 5&nbsp;GHz Wi-Fi and stay near the router. Files you download go to the <b>Files</b> app → Downloads. <span style="opacity:.6">· PhoneDrop v1.4</span></p>
+</main>
+<div class="toast" id="toast"></div>
+<textarea id="clip" style="position:fixed;top:-100px;opacity:0" readonly></textarea>
+
+<script>
+const T = "{{TOKEN}}";
+const $ = s => document.querySelector(s);
+const q = (p, extra='') => p + (p.includes('?') ? '&' : '?') + 't=' + T + extra;
+const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fmt(b){ if(b<1024) return b+' B'; const u=['KB','MB','GB','TB']; let i=-1; do{b/=1024;i++}while(b>=1024&&i<3); return b.toFixed(b<10?1:0)+' '+u[i]; }
+const ext = n => (n.split('.').pop()||'').slice(0,4);
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),1800); }
+
+// ---------- sending files ----------
+// Each file goes up WHOLE in one request: on iPhone, Safari can stall when asked to upload
+// just a section of a video from the Photos picker, so we never cut files into sections.
+// If the connection breaks, the PC keeps what arrived and we continue from there by
+// reading the file in order (no sections) and sending the rest in pieces.
+const FILE_PAR = 2;               // files sent at the same time
+const STALL_MS = 10000;           // no progress for 10 s → stop that request and continue from where the PC is
+const PIECE = 16 * 1024 * 1024;   // piece size when continuing after a break
+const prep = $('#prep');
+
+// ---------- activity log (shown on iPhone + sent to the PC window) ----------
+const logLines = [];
+function log(msg, bad){
+  const line = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) + '  ' + msg;
+  logLines.unshift({line, bad}); if(logLines.length > 60) logLines.pop();
+  $('#log').innerHTML = logLines.map(l => `<div class="${l.bad?'err':''}">${esc(l.line)}</div>`).join('');
+  if(bad) $('#logBox').open = true;
+  fetch(q('/api/log'), {method:'POST', body: msg, keepalive:true}).catch(()=>{});
+}
+window.addEventListener('error', e => log('Page error: ' + e.message, true));
+window.addEventListener('unhandledrejection', e => log('Page error: ' + (e.reason && e.reason.message || e.reason), true));
+
+// A fresh file picker every time, and it is kept alive until sending is done.
+// (On iPhone, clearing or removing a picker can make Safari delete the photos/videos it prepared.)
+const pickers = [];
+$('#pick').onclick = () => {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.multiple = true;
+  $('#pickers').append(inp); pickers.push(inp);
+  inp.addEventListener('change', () => {
+    prep.style.display = 'none';
+    const files = [...inp.files];
+    if(!files.length){ log('iPhone returned no files from the picker', true); return; }
+    log(`Picked ${files.length} file(s): ` + files.map(f => `${f.name} (${fmt(f.size)}${f.type ? ', ' + f.type : ''})`).join(', '));
+    enqueue(files);
+  });
+  inp.addEventListener('cancel', () => { prep.style.display = 'none'; });
+  prep.style.display = 'block';
+  inp.click();
+};
+$('#prepClose').onclick = () => prep.style.display = 'none';
+function dropPickers(){ // free memory once everything has been sent
+  if(queue.length || activeFiles) return;
+  const keep = batch && batch.items.some(i => i.state === 'err');
+  if(!keep) while(pickers.length > 1) pickers.shift().remove();
+}
+
+const queue = []; let activeFiles = 0, batch = null;
+const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+
+function enqueue(files){
+  if(!files.length) return;
+  if(!batch || batch.done === batch.total) batch = {total:0, done:0, bytes:0, start:performance.now(), items:[]};
+  files.sort((a,b) => a.size - b.size); // small files finish first
+  for(const f of files){
+    const it = {f, id: rid(), base: 0, cur: 0, state:'wait', err:'', resumeOnly: false};
+    it.el = document.createElement('div'); it.el.className='row';
+    it.el.innerHTML = `<div class="ico">${esc(ext(f.name))}</div><div class="meta"><div class="name">${esc(f.name)}</div><div class="sub">${fmt(f.size)} · waiting</div><div class="bar"><i></i></div></div>`;
+    $('#upList').append(it.el);
+    batch.items.push(it); batch.total++; batch.bytes += f.size; queue.push(it);
+  }
+  $('#overall').style.display = 'block';
+  wake(true); pump(); draw();
+}
+function pump(){ while(activeFiles < FILE_PAR && queue.length){ runFile(queue.shift()); } }
+const loaded = it => Math.min(it.f.size, it.base + it.cur);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const whenVisible = () => document.hidden ? new Promise(r => { const h = () => { if(!document.hidden){ document.removeEventListener('visibilitychange', h); r(); } }; document.addEventListener('visibilitychange', h); }) : Promise.resolve();
+const MB = b => (b / 1048576).toFixed(1) + ' MB';
+
+// One PUT with stall watchdog. Resolves {ok, done, status}; never rejects.
+function put(it, off, body){
+  return new Promise(res => {
+    const x = new XMLHttpRequest();
+    x.open('PUT', q(`/api/chunk?id=${it.id}&off=${off}&total=${it.f.size}&name=${encodeURIComponent(it.f.name)}`));
+    let last = performance.now(), stalled = false;
+    it.base = off; it.cur = 0;
+    const dog = setInterval(() => { if(performance.now() - last > STALL_MS){ stalled = true; x.abort(); } }, 1000);
+    const end = r => { clearInterval(dog); res(r); };
+    x.upload.onprogress = e => { last = performance.now(); it.cur = e.loaded; };
+    x.upload.onload = () => { last = performance.now(); };
+    x.onload = () => {
+      let j = {}; try{ j = JSON.parse(x.responseText); }catch(e){}
+      end({ok: x.status === 200, done: !!j.done, have: j.have, status: x.status, why: x.status === 200 ? '' : (x.status === 401 ? 'not connected — scan the QR code again' : 'PC error ' + x.status)});
+    };
+    x.onerror = () => end({ok:false, status:0, why:'connection lost'});
+    x.onabort = () => end({ok:false, status:0, why: stalled ? 'stuck' : 'cancelled'});
+    x.send(body);
+  });
+}
+async function status(it){
+  const r = await fetch(q('/api/status?id=' + it.id), {cache:'no-store'});
+  if(!r.ok) throw new Error('PC error ' + r.status);
+  return r.json();
+}
+
+// Reads a file front-to-back without cutting it into sections.
+function makeReader(f){
+  let rd = null, pos = 0, left = null, useSlice = false;
+  const open = () => { try{ rd = f.stream().getReader(); }catch(e){ useSlice = true; } pos = 0; left = null; };
+  open();
+  async function take(n){ // next n bytes (fewer at end of file)
+    if(useSlice){ const b = new Uint8Array(await f.slice(pos, Math.min(pos + n, f.size)).arrayBuffer()); pos += b.length; return b; }
+    const out = new Uint8Array(Math.min(n, f.size - pos)); let o = 0;
+    while(o < out.length){
+      if(!left || !left.length){
+        const {value, done} = await rd.read();
+        if(done) break;
+        left = value;
+      }
+      const k = Math.min(left.length, out.length - o);
+      out.set(left.subarray(0, k), o); o += k; left = left.subarray(k);
+    }
+    pos += o;
+    return o === out.length ? out : out.subarray(0, o);
+  }
+  return {
+    get pos(){ return pos; },
+    async seek(to){ // only forward; going back reopens the file
+      if(to < pos){ try{ rd && rd.cancel(); }catch(e){} open(); }
+      while(pos < to){ await take(Math.min(PIECE, to - pos)); }
+    },
+    take,
+    close(){ try{ rd && rd.cancel(); }catch(e){} }
+  };
+}
+
+// Continue sending a file from wherever the PC has got to.
+// The next piece is read while the current one uploads, so the Wi-Fi never waits for the file.
+async function resumeFile(it){
+  let rdr = null, fails = 0, lastHave = -1;
+  let cur = null;    // {at, buf}: piece in hand
+  let next = null;   // promise of the following piece
+  const readErr = e => { const err = new Error('iPhone could not read this file (' + (e && (e.name || e.message)) + ') — pick it again'); err.read = true; return err; };
+  const readPiece = async () => {
+    const at = rdr.pos, buf = await rdr.take(PIECE);
+    if(at < it.f.size && !buf.length) throw readErr({message:'it ended early'});
+    return {at, buf};
+  };
+  let have = null;   // null = ask the PC
+  try{
+    for(;;){
+      await whenVisible();
+      if(have === null){
+        let st;
+        try{ st = await status(it); }
+        catch(e){ if(++fails > 10) throw new Error('PC not reachable'); await sleep(Math.min(5000, 700 * fails)); continue; }
+        if(st.done) return;
+        have = st.known ? st.have : 0;   // unknown = PhoneDrop restarted, so start again
+      }
+      if(have >= it.f.size) { have = null; await sleep(500); continue; }
+      if(have > lastHave){ fails = 0; lastHave = have; }
+      // Get a piece that contains byte `have`.
+      if(!(cur && have >= cur.at && have < cur.at + cur.buf.length)){
+        if(next){ try{ cur = await next; }catch(e){ throw readErr(e); } next = null; }
+        if(!(cur && have >= cur.at && have < cur.at + cur.buf.length)){
+          if(!rdr) rdr = makeReader(it.f);
+          try{ await rdr.seek(have); cur = await readPiece(); }catch(e){ throw e.read ? e : readErr(e); }
+        }
+      }
+      // Start reading the following piece now, while this one uploads.
+      if(!next && cur.at + cur.buf.length < it.f.size && rdr.pos === cur.at + cur.buf.length){
+        next = readPiece(); next.catch(() => {});
+      }
+      // Wrapped as a Blob made from memory (not from the Photos file): uploads much faster than raw bytes.
+      const r = await put(it, have, new Blob([cur.buf.subarray(have - cur.at)]));
+      if(r.ok){
+        if(r.done) return;
+        have = typeof r.have === 'number' ? r.have : null;
+        continue;
+      }
+      if(r.status === 401) throw new Error(r.why);
+      if(++fails > 8) throw new Error(r.why);
+      log(`${it.f.name}: ${r.why} at ${MB(loaded(it))} — continuing`, fails > 3);
+      have = null;
+      await sleep(Math.min(5000, 600 * fails));
+    }
+  } finally { rdr && rdr.close(); }
+}
+
+async function runFile(it){
+  activeFiles++; it.state = 'up'; it.err = '';
+  log(`Sending ${it.f.name} (${fmt(it.f.size)})`); it.t0 = performance.now();
+  let failed = false;
+  try{
+    if(it.f.size === 0 && /^(image|video)\//.test(it.f.type)) throw new Error('iPhone gave an empty file — pick it again');
+    let done = false;
+    if(!it.resumeOnly){
+      await whenVisible();
+      const r = await put(it, 0, it.f);
+      if(r.ok && r.done) done = true;
+      else if(r.status === 401) throw new Error(r.why);
+      else {
+        it.resumeOnly = true;
+        log(`${it.f.name}: ${r.why} at ${MB(loaded(it))} — continuing from where the PC got to`);
+      }
+    }
+    if(!done) await resumeFile(it);
+  }catch(e){
+    failed = true; it.err = e.message;
+    log(`${it.f.name}: ${e.message}`, true);
+  }
+  activeFiles--;
+  it.state = failed ? 'err' : 'ok';
+  if(!failed) log(`Saved on PC: ${it.f.name} · ${(it.f.size / 1048576 / Math.max(0.1, (performance.now() - it.t0) / 1000)).toFixed(1)} MB/s`);
+  batch.done++; pump(); draw();
+  if(batch.done === batch.total){ finishBatch(); dropPickers(); }
+}
+function finishBatch(){
+  wake(false);
+  const bad = batch.items.filter(i => i.state === 'err');
+  $('#retry').style.display = bad.length ? 'inline-block' : 'none';
+  toast(bad.length ? `${bad.length} file(s) failed — tap Retry` : `Sent ${batch.total} file${batch.total>1?'s':''} to PC ✓`);
+  if(navigator.vibrate) navigator.vibrate(30);
+}
+$('#retry').onclick = () => {
+  const bad = batch.items.filter(i => i.state === 'err');
+  $('#retry').style.display = 'none';
+  for(const it of bad){ it.state = 'wait'; batch.done--; queue.push(it); }
+  wake(true); pump(); draw();
+};
+
+// Keep the screen on while sending (screen lock pauses uploads on iPhone).
+let lock = null;
+async function wake(on){
+  try{
+    if(on && !lock && navigator.wakeLock){ lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => lock = null); }
+    if(!on && lock){ await lock.release(); lock = null; }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange', () => { if(!document.hidden && batch && batch.done < batch.total) wake(true); });
+
+let drawT;
+function draw(){
+  if(!batch) return;
+  const sent = batch.items.reduce((a,i) => a + (i.state === 'ok' ? i.f.size : loaded(i)), 0);
+  const now = performance.now(), all = batch.done === batch.total;
+  const S = batch.samples || (batch.samples = []);
+  S.push({t: now, b: sent}); while(S.length > 2 && now - S[1].t > 3000) S.shift();
+  const live = S.length > 1 && now - S[0].t > 300 ? Math.max(0, (sent - S[0].b) / ((now - S[0].t) / 1000)) : 0;
+  const avg = sent / Math.max(0.3, (now - batch.start) / 1000);
+  const left = batch.bytes - sent, eta = live > 1e5 ? left / live : 0;
+  const etaTxt = eta > 0 && !all ? ` · ${eta < 60 ? Math.ceil(eta) + ' s' : Math.ceil(eta / 60) + ' min'} left` : '';
+  $('#ovSpeed').textContent = all ? 'Done · ' + (avg / 1048576).toFixed(1) + ' MB/s' : (live / 1048576).toFixed(1) + ' MB/s';
+  $('#ovText').textContent = `${batch.done}/${batch.total} · ${fmt(sent)} of ${fmt(batch.bytes)}${etaTxt}`;
+  $('#ovBar').style.width = (batch.bytes ? sent / batch.bytes * 100 : 100) + '%';
+  $('#keep').style.display = all ? 'none' : 'block';
+  for(const it of batch.items){
+    const l = it.state === 'ok' ? it.f.size : loaded(it);
+    const pc = it.f.size ? l / it.f.size * 100 : 100;
+    it.el.querySelector('.bar i').style.width = pc + '%';
+    it.el.querySelector('.sub').innerHTML = fmt(it.f.size) + ' · ' + ({wait:'waiting', up:Math.floor(pc)+'%', ok:'<span class="ok">saved on PC</span>', err:`<span class="err">failed (${esc(it.err)})</span>`}[it.state]);
+  }
+  clearTimeout(drawT);
+  if(!all) drawT = setTimeout(draw, 250);
+}
+
+// ---------- receiving & text ----------
+function copy(text){
+  if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(text).then(()=>toast('Copied')); return; }
+  const c=$('#clip'); c.value=text; c.removeAttribute('readonly'); c.select(); c.setSelectionRange(0, text.length);
+  try{ document.execCommand('copy'); toast('Copied'); }catch(e){ toast('Long-press the text to copy'); }
+  c.setAttribute('readonly',''); c.blur();
+}
+const media = n => /\.(jpe?g|png|gif|heic|webp|mp4|mov|m4v|pdf|txt)$/i.test(n);
+let lastShared = '', lastTexts = '';
+function render(s){
+  s.shared = s.shared||[]; s.texts = s.texts||[]; s.transfers = s.transfers||[]; s.received = s.received||[];
+  const sh = JSON.stringify(s.shared);
+  if(sh !== lastShared){
+    lastShared = sh;
+    $('#sharedCount').textContent = s.shared.length ? s.shared.length : '';
+    $('#shared').innerHTML = s.shared.length ? s.shared.map(f => {
+      const u = '/dl/' + encodeURIComponent(f.name);
+      return `<div class="row"><div class="ico">${esc(ext(f.name))}</div><div class="meta"><div class="name">${esc(f.name)}</div><div class="sub">${fmt(f.size)}</div></div>
+      ${media(f.name)?`<a class="btn" href="${q(u,'&view=1')}" target="_blank">Open</a>`:''}<a class="btn p" href="${q(u)}" download="${esc(f.name)}">Save</a></div>`;
+    }).join('') : '<div class="empty">Nothing shared yet. Drop files on the PhoneDrop page on your PC.</div>';
+  }
+  const tx = JSON.stringify(s.texts);
+  if(tx !== lastTexts){
+    lastTexts = tx;
+    $('#texts').innerHTML = s.texts.map(t => {
+      const link = /^https?:\/\/\S+$/i.test(t.text.trim());
+      return `<div class="row"><div class="meta"><div class="sub">From ${t.from} · ${new Date(t.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div><div class="txt">${esc(t.text)}</div></div>
+      ${link?`<a class="btn" href="${esc(t.text.trim())}" target="_blank">Open</a>`:''}<button class="btn" data-copy="${t.id}">Copy</button></div>`;
+    }).join('');
+    $('#texts').querySelectorAll('[data-copy]').forEach(b => b.onclick = () => copy(s.texts.find(t=>t.id==b.dataset.copy).text));
+  }
+}
+let fails = 0, timer;
+async function poll(){
+  clearTimeout(timer);
+  try{
+    const r = await fetch(q('/api/state'), {cache:'no-store'});
+    if(!r.ok) throw 0;
+    render(await r.json()); fails = 0;
+    $('#dot').classList.remove('off'); $('#status').textContent = 'Connected to PC';
+  }catch(e){
+    if(++fails > 1){ $('#dot').classList.add('off'); $('#status').textContent = 'PC not reachable'; }
+  }
+  clearTimeout(timer); timer = setTimeout(poll, document.hidden ? 5000 : 2000);
+}
+poll();
+document.addEventListener('visibilitychange', () => { if(!document.hidden) poll(); });
+
+$('#sendTxt').onclick = async () => {
+  const v = $('#msg').value; if(!v.trim()) return;
+  const r = await fetch(q('/api/text'), {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:v})}).catch(()=>null);
+  if(r && r.ok){ $('#msg').value=''; toast('Sent to PC ✓'); poll(); } else toast('Could not reach PC');
+};
+</script>
+</body>
+</html>
