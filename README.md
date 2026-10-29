@@ -22,9 +22,9 @@
 
 <br>
 
-<img src="docs/screenshot-pc.png" alt="PhoneDrop control page on Windows" width="72%">
+<img src="/preview.webp" alt="PhoneDrop control page on Windows" width="72%">
 &nbsp;
-<img src="docs/screenshot-iphone.png" alt="PhoneDrop on iPhone" width="23%">
+<img src="/preview-mobile.webp" alt="PhoneDrop on iPhone" width="23%">
 
 </div>
 
